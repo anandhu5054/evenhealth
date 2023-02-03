@@ -8,12 +8,12 @@ from django.http import Http404
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsDoctor
+from .permissions import IsDoctor, IsApproved
 
 
 
 class DoctorProfileView(APIView):
-
+    """API for the doctors to update and edit their profile"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsDoctor]
 
@@ -31,10 +31,24 @@ class DoctorProfileView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class SlotListCreateAPIView(generics.ListCreateAPIView):
+    """API for doctors to get the slots and create new ones"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+
     queryset = Slot.objects.all()
     serializer_class = SlotSerializer
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        doctor = DoctorProfile.objects.get(user=user)
+        serializer.save(doctor=doctor)
+
 class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """API for the doctors to get, edit and delete the slots"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+
     queryset = Slot.objects.all()
     serializer_class = SlotSerializer

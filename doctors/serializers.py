@@ -60,4 +60,23 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
 class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Slot
-        fields = '__all__'
+        fields = ['id', 'start_time', 'end_time', 'date']
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        doctor = request.user.doctorprofile
+        validated_data['doctor'] = doctor
+        return super().create(validated_data)
+
+    def validate(self, data):
+        start_time = data['start_time']
+        end_time = data['end_time']
+        date = data['date']
+        request = self.context.get("request")
+        doctor = request.user.doctorprofile
+
+        # Check if there is no other slot in the same time and date
+        if Slot.objects.filter(start_time__lte=start_time, end_time__gte=end_time, date=date, doctor=doctor).exists():
+            raise serializers.ValidationError('There is already a slot in this time and date.')
+
+        return data
