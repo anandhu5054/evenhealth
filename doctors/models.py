@@ -32,3 +32,9 @@ class DoctorProfile(models.Model):
     graduation_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
     license_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
     certifications_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
+
+class Slot(models.Model):
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    date = models.DateField()
+    doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE)

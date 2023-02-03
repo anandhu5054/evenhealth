@@ -16,13 +16,12 @@ def get_tokens_for_user(user):
     }
 
 
-class RegisterPatientView(APIView):
+class RegisterUserView(APIView):
     def post(self, request, format=None):
         serializer=UserRegistrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             
             user= serializer.save()
-            user.role = "Patient"
             user.save()
             return Response({'msg':'Registration Success'},status=status.HTTP_201_CREATED)
         

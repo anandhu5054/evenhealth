@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DoctorProfile, Account
+from .models import DoctorProfile, Account, Slot
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
@@ -54,5 +54,10 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
         instance.graduation_certificate = validated_data.get('graduation_certificate', instance.graduation_certificate)
         instance.license_certificate = validated_data.get('license_certificate', instance.license_certificate)
         instance.certifications_certificate = validated_data.get('certifications_certificate', instance.certifications_certificate)
-    
-    
+        instance.save()
+        return instance
+
+class SlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Slot
+        fields = '__all__'
