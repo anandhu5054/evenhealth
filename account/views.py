@@ -27,29 +27,7 @@ class RegisterUserView(APIView):
         
         return Response(serializer.errors)
 
-class RegisterDoctortView(APIView):
-    def post(self, request, format=None):
-        serializer=UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            
-            user= serializer.save()
-            user.role = "Doctor"
-            user.save()
-            return Response({'msg':'Registration Success'},status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors)
 
-class RegisterLabView(APIView):
-    def post(self, request, format=None):
-        serializer=UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            
-            user= serializer.save()
-            user.role = "Lab"
-            user.save()
-            return Response({'msg':'Registration Success'},status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors)
 
 class UserLogin(APIView):
     def post(self, request , format=None):

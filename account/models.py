@@ -16,7 +16,7 @@ class MyAccountManager(BaseUserManager):
             phone_number = phone_number,
             first_name = first_name,
             last_name = last_name,
-            role = role
+            role = role,
         )
 
         user.set_password(password)
@@ -29,7 +29,8 @@ class MyAccountManager(BaseUserManager):
             password = password,
             first_name = first_name,
             last_name = last_name,
-            phone_number= phone_number
+            phone_number= phone_number,
+            role = "None"
         )
         user.is_admin = True
         user.is_active = True
