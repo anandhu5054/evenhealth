@@ -56,6 +56,7 @@ class CreateQualificationView(generics.ListCreateAPIView):
 
 
 
+
 class SlotListCreateAPIView(generics.ListCreateAPIView):
     """API for doctors to get the slots and create new ones"""
     authentication_classes = [JWTAuthentication]

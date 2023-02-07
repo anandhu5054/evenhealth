@@ -23,3 +23,7 @@ class LoginSerializer(serializers.ModelSerializer):
     class Meta:
         model=Account
         fields = ['email','password','role']
+
+class EmailVerificationSerializer(serializers.Serializer):
+    otp = serializers.CharField()
+    email = serializers.CharField()

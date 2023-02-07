@@ -1,9 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import UserRegistrationSerializer,LoginSerializer
+from rest_framework import status, generics
+from .serializers import UserRegistrationSerializer,LoginSerializer,EmailVerificationSerializer
 from django.contrib.auth import  authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.mail import send_mail
+import random
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 # Create your views here.
 
@@ -42,3 +47,34 @@ class UserLogin(APIView):
 
             else:
                 return Response({'msg':'Login Failed'})
+
+class EmailVerificationAPI(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmailVerificationSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        otp = random.randint(100000, 999999)
+        subject = "Email Verification OTP"
+        message = f"Your OTP is {otp}"
+        recipient_list = [user.email]
+        send_mail(subject, message,[], recipient_list)
+        request.session['otp'] = otp
+        return Response({"message": "OTP sent to email successfully."}, status=status.HTTP_200_OK)
+
+class EmailVerificationOTPAPI(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmailVerificationSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        otp = serializer.validated_data.get("otp")
+        if otp and otp == request.session.get('otp'):
+            user.is_email_verified = True
+            user.save()
+            return Response({"message": "Email Verified Successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
