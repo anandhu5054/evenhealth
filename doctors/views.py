@@ -10,7 +10,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsDoctor, IsApproved
-
+from datetime import datetime
 
 class CreateDoctorProfileview(generics.ListCreateAPIView):
     serializer_class = DoctorProfileSerializer
@@ -64,7 +64,12 @@ class SlotListCreateAPIView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         doctor = DoctorProfile.objects.get(user=user)
-        return Slot.objects.filter(doctor=doctor)
+        date_str = self.request.query_params.get('date')
+        if date_str:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            return Slot.objects.filter(doctor=doctor, date=date)
+        else:
+            return Slot.objects.filter(doctor=doctor)
 
     def perform_create(self, serializer):
         user = self.request.user

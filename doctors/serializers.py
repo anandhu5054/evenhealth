@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.utils import timezone
+from datetime import timedelta
+
 from .models import DoctorProfile, Account, Slot, Department, Qualification
 from account.serializers import UserRegistrationSerializer
 
@@ -40,7 +43,7 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
 class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Slot
-        fields = ['id', 'start_time', 'end_time', 'date']
+        fields = ['id', 'start_time', 'end_time', 'date','number_of_patients']
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -58,5 +61,6 @@ class SlotSerializer(serializers.ModelSerializer):
         # Check if there is no other slot in the same time and date
         if Slot.objects.filter(start_time__lte=start_time, end_time__gte=end_time, date=date, doctor=doctor).exists():
             raise serializers.ValidationError('There is already a slot in this time and date.')
-
+        elif start_time >= timezone.now() + timedelta(hours=2):
+            raise serializers.ValidationError('You can only add slots with start times that are at least two hours from now ')
         return data

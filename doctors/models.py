@@ -58,3 +58,4 @@ class Slot(models.Model):
     end_time = models.TimeField()
     date = models.DateField()
     doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE)
+    number_of_patients = models.IntegerField( blank=True, null=True)
