@@ -5,7 +5,8 @@ from account.serializers import UserRegistrationSerializer
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = '__all__'
+        fields = ['name']
+        
 
 class QualificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,12 +28,12 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
         'license_certificate', 'certifications_certificate', 'department')
 
 
-    def create(self, validated_data):
-        print("Hello")
-        request = self.context.get("request")
-        user = request.user
-        validated_data['user'] = user
-        return super().create(validated_data)
+    # def create(self, validated_data):
+    #     print("Hello")
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     validated_data['user'] = user
+    #     return super().create(validated_data)
 
 
 

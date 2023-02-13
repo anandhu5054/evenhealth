@@ -8,7 +8,7 @@ from .serializers import DoctorProfileSerializer, SlotSerializer, QualificationS
 from django.http import Http404
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsDoctor, IsApproved
 
 
@@ -29,12 +29,10 @@ class RetrieveUpdateDoctorProfileView(generics.RetrieveUpdateAPIView):
         user = self.request.user
         return DoctorProfile.objects.get(user=user)
 
-
-
 class CreateDepartmentView(generics.ListCreateAPIView):
     serializer_class = DepartmentSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsDoctor]
+    permission_classes = [IsAuthenticated, IsDoctor, IsAdminUser]
     
     queryset  = Department.objects.all()
     

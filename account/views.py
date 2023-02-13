@@ -8,7 +8,8 @@ from django.core.mail import send_mail
 import random
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from .tasks import send_email_task
+from django.conf import settings
 
 # Create your views here.
 
@@ -58,8 +59,10 @@ class EmailVerificationAPI(generics.GenericAPIView):
         otp = random.randint(100000, 999999)
         subject = "Email Verification OTP"
         message = f"Your OTP is {otp}"
-        recipient_list = [user.email]
-        send_mail(subject, message,[], recipient_list)
+        recipient_list = user.email
+        from_email=settings.EMAIL_HOST_USER
+        # send_mail(subject, message, from_email,[recipient_list])
+        send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
         request.session['otp'] = otp
         return Response({"message": "OTP sent to email successfully."}, status=status.HTTP_200_OK)
 
@@ -72,9 +75,9 @@ class EmailVerificationOTPAPI(generics.GenericAPIView):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        otp = serializer.validated_data.get("otp")
+        otp = int(serializer.validated_data.get("otp"))
         if otp and otp == request.session.get('otp'):
-            user.is_email_verified = True
+            user.is_verified = True
             user.save()
             return Response({"message": "Email Verified Successfully."}, status=status.HTTP_200_OK)
         return Response({"message": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)

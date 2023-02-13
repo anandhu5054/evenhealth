@@ -1,10 +1,21 @@
 from django.db import models
 from account.models import Account
+from django.utils.text import slugify
+from django.db import IntegrityError
 
 # Create your models here.
 
 class Department(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    slug = models.SlugField(max_length=255, unique=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        try:
+            super(Department, self).save(*args, **kwargs)
+        except IntegrityError:
+            raise ValueError('Department already exists')
+            
 
 class DoctorProfile(models.Model):
     user = models.OneToOneField(Account, on_delete=models.CASCADE)
@@ -33,7 +44,7 @@ class DoctorProfile(models.Model):
 
 
 class Qualification(models.Model):
-    doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(DoctorProfile, related_name='qualifications', on_delete=models.CASCADE)
     qualification = models.CharField(max_length=255, blank=True, null=True)
     medical_school = models.CharField(max_length=255, blank=True, null=True)
     graduation_year = models.PositiveIntegerField()
