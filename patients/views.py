@@ -10,7 +10,7 @@ from datetime import timedelta
 from .permissions import IsPatient
 from .models import PatientProfile
 from account.models import Account
-from .serializers import DoctorDetailSerializer, DoctorListSerializerPatients
+from .serializers import DoctorDetailSerializer, DoctorListSerializerPatients, PatientProfileUpdateSerializer
 from doctors.serializers import DoctorProfileSerializer, SlotSerializer
 from doctors.models import DoctorProfile, Slot
 
@@ -25,7 +25,7 @@ class CreatePatientProfileView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user)
 
 class RetrieveUpdatePateintProfileView(generics.RetrieveUpdateAPIView):
-    serializer_class = PatientProfileSerializer
+    serializer_class = PatientProfileUpdateSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated,IsPatient]
 
@@ -89,4 +89,4 @@ class SlotsOfDoctorsAPIView(generics.ListAPIView):
             return Slot.objects.none()
 
         # get the slots for the given doctor and date
-        return Slot.objects.filter(doctor_id=doctor_id, date=date, number_of_patients__gt=0, start_time__gte=timezone.now() + timedelta(hours=2))
+        return Slot.objects.filter(doctor_id=doctor_id, date=date, number_of_patients__gt=0)

@@ -3,4 +3,8 @@ from .models import PatientProfile
 
 # Register your models here.
 
-admin.site.register(PatientProfile)
+class PatientProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'gender', 'blood_group', 'height', 'weight')
+    list_filter = ('gender', 'blood_group')
+
+admin.site.register(PatientProfile, PatientProfileAdmin)

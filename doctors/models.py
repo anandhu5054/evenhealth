@@ -15,10 +15,13 @@ class Department(models.Model):
             super(Department, self).save(*args, **kwargs)
         except IntegrityError:
             raise ValueError('Department already exists')
+    
+    def __str__(self):
+        return self.name
             
 
 class DoctorProfile(models.Model):
-    user = models.OneToOneField(Account, on_delete=models.CASCADE)
+    user = models.OneToOneField(Account,related_name="doctorProfile", on_delete=models.CASCADE)
     date_of_birth = models.DateField(blank=True, null=True)
     GENDER_CHOICES = [
         ('M', 'Male'),
@@ -40,7 +43,11 @@ class DoctorProfile(models.Model):
     languages = models.CharField(max_length=255, blank=True, null=True)
     license_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
     certifications_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, related_name="doctor_profile" ,on_delete=models.CASCADE)
+    consultation_fee = models.IntegerField()
+
+    def __str__(self):
+        return self.user.full_name()
 
 
 class Qualification(models.Model):
@@ -59,3 +66,4 @@ class Slot(models.Model):
     date = models.DateField()
     doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE)
     number_of_patients = models.IntegerField( blank=True, null=True)
+    booked_tokens = models.IntegerField(default=1)  #Number of booked patients

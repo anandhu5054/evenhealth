@@ -4,7 +4,7 @@ from account.models import Account
 
 # Create your models here.
 class PatientProfile(models.Model):
-    user = models.OneToOneField(Account, on_delete=models.CASCADE)
+    user = models.OneToOneField(Account, related_name="patientprofile" ,on_delete=models.CASCADE)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     GENDER_CHOICES = [
@@ -30,3 +30,6 @@ class PatientProfile(models.Model):
     blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
     height = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+
+    def __str__(self):
+        return self.user.full_name()

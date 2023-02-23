@@ -47,7 +47,7 @@ class UserLogin(APIView):
                 return Response({'token':token , 'msg':'Login Successful'})
 
             else:
-                return Response({'msg':'Login Failed'})
+                return Response({'msg':'Username OR Password does not match'})
 
 class EmailVerificationAPI(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
