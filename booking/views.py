@@ -44,9 +44,6 @@ class BookingCreateAPIView(generics.CreateAPIView):
         if slot_start_datetime < timezone.now():
             raise ValidationError('You cannot book a slot that has already started')
 
-        # Decrement the number of available slots
-        slot.booked_tokens += 1
-        slot.save()
 
         # Create the booking object
         serializer = self.get_serializer(data=request.data)
@@ -64,11 +61,15 @@ class BookingCreateAPIView(generics.CreateAPIView):
             'payment_capture': 1
         }
         order = razorpay_client.order.create(order_data)
-      
+        
+        booking.order_id = order['id']
+        booking.save()
+
         return Response({
             'booking_id': booking.id,
             'order_id': order['id']
         })
+
 
 class PaymentVerifyAPIView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -88,13 +89,22 @@ class PaymentVerifyAPIView(APIView):
         # Verify the payment with Razorpay
         razorpay_client = razorpay.Client(
             auth=(str(settings.RAZORPAY_KEY_ID), str(settings.RAZORPAY_KEY_SECRET)))
-            
+
+        order_id = booking.order_id
+
+        context = {
+            "razorpay_payment_id": payment_id,
+            "razorpay_order_id": order_id,
+            "razorpay_signature": payment_signature
+        }
+
         try:
-            payment = razorpay_client.payment.fetch(payment_id)
-            payment.verify(payment_signature)
+            razorpay_client.utility.verify_payment_signature(context)
         except Exception as e:
             raise ValidationError(str(e))
-
+        
+        booking.slot.booked_tokens +=1
+        booking.slot.save()
         # Mark the booking as paid and send a confirmation to the user
         booking.paid = True
         booking.save()

@@ -11,6 +11,7 @@ class Booking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     paid = models.BooleanField(default=False) 
     payment_id = models.CharField(max_length=255, blank=True, null=True)
+    order_id = models.CharField(max_length=255, blank=True, null=True)
     token = models.IntegerField()  
 
     def __str__(self):
