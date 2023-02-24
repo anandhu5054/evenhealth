@@ -29,7 +29,14 @@ class RegisterUserView(APIView):
             
             user= serializer.save()
             user.save()
-            return Response({'msg':'Registration Success'},status=status.HTTP_201_CREATED)
+            otp = random.randint(100000, 999999)
+            subject = "Email Verification OTP"
+            message = f"Your OTP is {otp}"
+            recipient_list = user.email
+            from_email=settings.EMAIL_HOST_USER
+            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            request.session['otp'] = otp
+            return Response({'msg':'Please check the mail for the OTP'},status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors)
 
@@ -48,6 +55,7 @@ class UserLogin(APIView):
 
             else:
                 return Response({'msg':'Username OR Password does not match'})
+
 
 class EmailVerificationAPI(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
@@ -79,5 +87,6 @@ class EmailVerificationOTPAPI(generics.GenericAPIView):
         if otp and otp == request.session.get('otp'):
             user.is_verified = True
             user.save()
+            request.session.pop('otp')
             return Response({"message": "Email Verified Successfully."}, status=status.HTTP_200_OK)
         return Response({"message": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)

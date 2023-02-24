@@ -15,6 +15,7 @@ from doctors.models import DoctorProfile
 class USerApprovalAPIView(generics.UpdateAPIView):
     queryset = Account.objects.all()
     permission_classes = [IsAdminUser]
+    serializer_class = AdminDoctorApprovalSerializer
 
     def get_object(self):
         pk = self.kwargs.get('pk')
@@ -22,15 +23,16 @@ class USerApprovalAPIView(generics.UpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.is_approved == True:
-            user.is_approved = False
-            user.save()
-            return Response({'message': 'User has been Disapproved.'}, status=status.HTTP_200_OK)
-        else:
+        if request.data.get('is_approved') == 'True':
             user.is_approved = True
             user.save()
             return Response({'message': 'User has been Approved.'}, status=status.HTTP_200_OK)
 
+        else:
+            user.is_approved = False
+            user.save()
+            return Response({'message': 'User has been Disapproved.'}, status=status.HTTP_200_OK)
+            
 class CustomPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     page_size = 1

@@ -5,7 +5,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 from doctors.models import Slot
-from .serializers import BookingSerializer
+from patients.models import PatientProfile
+from .serializers import BookingSerializer, ListBookingsPatient
 from .models import Booking
 from datetime import datetime
 from rest_framework.exceptions import ValidationError
@@ -108,8 +109,15 @@ class PaymentVerifyAPIView(APIView):
         # Mark the booking as paid and send a confirmation to the user
         booking.paid = True
         booking.save()
-        # send_confirmation_email(booking)
+
 
         return Response({'status': 'success'})
 
-# class ListBookedAppointmentAPI(generics.ListAPIView):
+class ListBookedAppointmentAPI(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    serializer_class = ListBookingsPatient
+    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+
+    def get_queryset(self):
+        patient = self.request.user.patientprofile
+        return Booking.objects.filter(patient=patient, paid=True)

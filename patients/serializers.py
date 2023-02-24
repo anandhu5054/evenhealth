@@ -17,14 +17,14 @@ class PatientProfileUpdateSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(source='user.phone_number')
     class Meta:
         model = PatientProfile
-        exclude = ('user', 'id')
+        exclude = ('user', 'id','date_of_birth', 'gender', 'address',
+                    'emergency_contact_name', 'emergency_contact_relationship', 
+                    'emergency_contact_phone', 'blood_group', 'height',
+                    'weight')
 
         validators = [
             RequiredValidator(
-                fields=(  'date_of_birth', 'gender', 'address',
-                    'emergency_contact_name', 'emergency_contact_relationship', 
-                    'emergency_contact_phone', 'blood_group', 'height',
-                    'weight', 'profile_image'
+                fields=(   'profile_image',
                 )
             )
         ]

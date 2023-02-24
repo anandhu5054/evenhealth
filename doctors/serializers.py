@@ -5,6 +5,7 @@ from .validators import RequiredValidator
 from datetime import datetime
 
 from .models import DoctorProfile, Account, Slot, Department, Qualification
+from booking.models import Booking
 from account.serializers import UserRegistrationSerializer
 
 
@@ -63,8 +64,6 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
-
-
 class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Slot
@@ -93,3 +92,13 @@ class SlotSerializer(serializers.ModelSerializer):
         elif start_datetime <= timezone.now() + timedelta(hours=2):
             raise serializers.ValidationError('You can only add slots with start times that are at least two hours from now ')
         return data
+    
+
+class BookedAppointmentsSerializer(serializers.ModelSerializer):
+    patientName = serializers.CharField(source='patient.user.full_name')
+    start_time = serializers.CharField(source='slot.start_time')
+    end_time = serializers.CharField(source='slot.end_time')
+    date = serializers.CharField(source='slot.date')
+    class Meta:
+        model = Booking
+        fields = ['patientName','start_time','end_time','date', 'consultation_type','token']

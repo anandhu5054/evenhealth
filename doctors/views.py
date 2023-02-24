@@ -5,7 +5,7 @@ from account.models import Account
 from account.serializers import UserRegistrationSerializer
 from .models import DoctorProfile, Slot, Department, Qualification
 from adminpanel.serializers import DoctorDetailSerializer, AccountSerializerForLisiting
-from .serializers import DoctorProfileSerializer, SlotSerializer, QualificationSerializer, DepartmentSerializer
+from .serializers import DoctorProfileSerializer, BookedAppointmentsSerializer, SlotSerializer, QualificationSerializer, DepartmentSerializer
 from django.http import Http404
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsDoctor, IsApproved
 from datetime import datetime
 from django.db import IntegrityError
+from booking.models import Booking
 
 
 
@@ -123,3 +124,14 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+class BookedAppointmentsAPIView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+    serializer_class = BookedAppointmentsSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        doctor = DoctorProfile.objects.get(user=user)
+        slot = Slot.objects.filter(doctor=doctor)
+        return Booking.objects.filter(slot__in=slot,paid=True)
