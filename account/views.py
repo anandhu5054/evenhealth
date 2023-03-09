@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .tasks import send_email_task
 from django.conf import settings
+from account.models import Account
 
 # Create your views here.
 
@@ -25,8 +26,11 @@ def get_tokens_for_user(user):
 class RegisterUserView(APIView):
     def post(self, request, format=None):
         serializer=UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            
+        email = request.data.get('email')
+        if Account.objects.filter(email=email,is_verified=False).exists():
+            pass
+
+        if serializer.is_valid(raise_exception=True):            
             user= serializer.save()
             user.save()
             otp = random.randint(100000, 999999)
