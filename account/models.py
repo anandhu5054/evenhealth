@@ -52,7 +52,7 @@ class Account(AbstractBaseUser):
     first_name      = models.CharField(max_length=50)
     last_name       = models.CharField(max_length=50)
     email           = models.EmailField(max_length=100, unique=True)
-    phone_number    = models.CharField(max_length=50, unique=True)
+    phone_number    = models.CharField(max_length=50)
     role = models.CharField(max_length=20, choices=ROLE, default='None')
 
     # required
@@ -81,3 +81,8 @@ class Account(AbstractBaseUser):
 
     def has_module_perms(self, add_label):
         return True
+    
+class LoginOtp(models.Model):
+    myuser = models.ForeignKey(Account,on_delete=models.CASCADE, related_name="loginotp")
+    otp = models.IntegerField()
+    is_used = models.BooleanField(default=False)

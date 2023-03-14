@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
-from .serializers import UserRegistrationSerializer,LoginSerializer,EmailVerificationSerializer
+from .serializers import UserRegistrationSerializer,LoginSerializer,OtpSerializer
 from django.contrib.auth import  authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .tasks import send_email_task
 from django.conf import settings
-from account.models import Account
+from account.models import Account, LoginOtp
 
 # Create your views here.
 
@@ -27,10 +27,20 @@ class RegisterUserView(APIView):
     def post(self, request, format=None):
         serializer=UserRegistrationSerializer(data=request.data)
         email = request.data.get('email')
-        if Account.objects.filter(email=email,is_verified=False).exists():
-            pass
+        
+        if Account.objects.filter(email=email, is_verified=False).exists():
+            user = Account.objects.get(email=email)
+            otp = random.randint(100000, 999999)
+            subject = "Email Verification OTP"
+            message = f"Your OTP is {otp}"
+            recipient_list = email
+            from_email=settings.EMAIL_HOST_USER
+            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            login_otp = LoginOtp(otp=otp,myuser=user)
+            login_otp.save()
+            return Response({'msg':'Please check the mail for the OTP'},status=status.HTTP_201_CREATED)
 
-        if serializer.is_valid(raise_exception=True):            
+        if serializer.is_valid(raise_exception=True):        
             user= serializer.save()
             user.save()
             otp = random.randint(100000, 999999)
@@ -39,7 +49,8 @@ class RegisterUserView(APIView):
             recipient_list = user.email
             from_email=settings.EMAIL_HOST_USER
             send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
-            request.session['otp'] = otp
+            login_otp = LoginOtp(otp=otp,myuser=user)
+            login_otp.save()
             return Response({'msg':'Please check the mail for the OTP'},status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors)
@@ -62,35 +73,44 @@ class UserLogin(APIView):
 
 
 class EmailVerificationAPI(generics.GenericAPIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    serializer_class = EmailVerificationSerializer
-
     def post(self, request, *args, **kwargs):
-        user = request.user
+        user = Account.objects.get(email=request.data.get("email"))
+
+        email = request.data.get("email")
         otp = random.randint(100000, 999999)
-        subject = "Email Verification OTP"
-        message = f"Your OTP is {otp}"
-        recipient_list = user.email
-        from_email=settings.EMAIL_HOST_USER
-        # send_mail(subject, message, from_email,[recipient_list])
-        send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
-        request.session['otp'] = otp
-        return Response({"message": "OTP sent to email successfully."}, status=status.HTTP_200_OK)
+        context = {
+            "email" : email,
+            "otp" : otp
+        }
 
-class EmailVerificationOTPAPI(generics.GenericAPIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    serializer_class = EmailVerificationSerializer
+        serializer=OtpSerializer(data=context)
+        if serializer.is_valid(raise_exception=True):
+            subject = "Email Verification OTP"
+            message = f"Your OTP is {otp}"
+            recipient_list = user.email
+            from_email=settings.EMAIL_HOST_USER
+            # send_mail(subject, message, from_email,[recipient_list])
+            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            serializer.save()
+            return Response({"message": "OTP sent to email successfully."}, status=status.HTTP_200_OK)
 
+
+"""Verifying the otp for the Registration and Login"""
+class EmailVerificationOTPAPI(APIView):
     def post(self, request, *args, **kwargs):
-        user = request.user
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        otp = int(serializer.validated_data.get("otp"))
-        if otp and otp == request.session.get('otp'):
-            user.is_verified = True
-            user.save()
-            request.session.pop('otp')
-            return Response({"message": "Email Verified Successfully."}, status=status.HTTP_200_OK)
-        return Response({"message": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer=OtpSerializer(data=request.data)
+        email = request.data.get('email')
+        otp=request.data.get("otp")
+        user = Account.objects.get(email=email)
+        user.is_verified = True
+        user.save()
+        if serializer.is_valid(raise_exception=True):
+            try:
+                otp = LoginOtp.objects.get(otp=otp,myuser=user,is_used=False)
+                otp.is_used = True
+                otp.save()
+            except:
+                return Response({'error': 'Wrong OTP'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            token= get_tokens_for_user(user)
+            return Response({'token':token , 'msg':'Successful'}, status=status.HTTP_200_OK)
