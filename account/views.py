@@ -35,7 +35,8 @@ class RegisterUserView(APIView):
             message = f"Your OTP is {otp}"
             recipient_list = email
             from_email=settings.EMAIL_HOST_USER
-            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            # send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            send_mail(subject, message, from_email,[recipient_list])
             login_otp = LoginOtp(otp=otp,myuser=user)
             login_otp.save()
             return Response({'msg':'Please check the mail for the OTP'},status=status.HTTP_201_CREATED)
@@ -48,7 +49,8 @@ class RegisterUserView(APIView):
             message = f"Your OTP is {otp}"
             recipient_list = user.email
             from_email=settings.EMAIL_HOST_USER
-            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            # send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            send_mail(subject, message, from_email,[recipient_list])
             login_otp = LoginOtp(otp=otp,myuser=user)
             login_otp.save()
             return Response({'msg':'Please check the mail for the OTP'},status=status.HTTP_201_CREATED)
@@ -89,8 +91,8 @@ class EmailVerificationAPI(generics.GenericAPIView):
             message = f"Your OTP is {otp}"
             recipient_list = user.email
             from_email=settings.EMAIL_HOST_USER
-            # send_mail(subject, message, from_email,[recipient_list])
-            send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            # send_email_task.apply_async(args=[subject, message, from_email,[recipient_list]])
+            send_mail(subject, message, from_email,[recipient_list])
             serializer.save()
             return Response({"message": "OTP sent to email successfully."}, status=status.HTTP_200_OK)
 
