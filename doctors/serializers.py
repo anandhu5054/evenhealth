@@ -26,6 +26,19 @@ class QualificationSerializer(serializers.ModelSerializer):
         doctor = request.user.doctorprofile
         validated_data['doctor'] = doctor
         return super().create(validated_data)
+    
+
+class CreateDoctorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DoctorProfile
+        exclude = ('user', )
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user
+        validated_data['user'] = user
+        return super().create(validated_data)
+
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='user.email', required=True)
@@ -92,7 +105,7 @@ class SlotSerializer(serializers.ModelSerializer):
         elif start_datetime <= timezone.now() + timedelta(hours=2):
             raise serializers.ValidationError('You can only add slots with start times that are at least two hours from now ')
         return data
-    
+
 
 class BookedAppointmentsSerializer(serializers.ModelSerializer):
     patientName = serializers.CharField(source='patient.user.full_name')

@@ -5,7 +5,7 @@ from account.models import Account
 from account.serializers import UserRegistrationSerializer
 from .models import DoctorProfile, Slot, Department, Qualification
 from adminpanel.serializers import DoctorDetailSerializer, AccountSerializerForLisiting
-from .serializers import DoctorProfileSerializer, BookedAppointmentsSerializer, SlotSerializer, QualificationSerializer, DepartmentSerializer
+from .serializers import DoctorProfileSerializer, CreateDoctorProfileSerializer, BookedAppointmentsSerializer, SlotSerializer, QualificationSerializer, DepartmentSerializer
 from django.http import Http404
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
@@ -18,7 +18,7 @@ from booking.models import Booking
 
 
 class CreateDoctorProfileview(generics.ListCreateAPIView):
-    serializer_class = DoctorProfileSerializer
+    serializer_class = CreateDoctorProfileSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsDoctor]
 
