@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import PatientProfile
 from account.models import Account
 from doctors.serializers import DepartmentSerializer, QualificationSerializer
-from doctors.models import DoctorProfile
+from doctors.models import DoctorProfile, Slot
 from doctors.validators import RequiredValidator
 
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -69,3 +69,9 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
                   'license_number', 'license_expiry_date', 'hospital_affiliations',
                   'profile_image', 'experience', 'awards', 'publications', 'languages', 
                    'department', 'qualifications')
+        
+
+class PatientSlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Slot
+        fields = ['id', 'start_time', 'end_time', 'date']

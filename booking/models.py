@@ -21,3 +21,4 @@ class Booking(models.Model):
         return self.slot.doctor.user.full_name()
     
     doctor.short_description = 'Doctor'
+

@@ -10,7 +10,7 @@ from datetime import timedelta
 from .permissions import IsPatient
 from .models import PatientProfile
 from account.models import Account
-from .serializers import DoctorDetailSerializer, DoctorListSerializerPatients, PatientProfileUpdateSerializer
+from .serializers import DoctorDetailSerializer, DoctorListSerializerPatients, PatientProfileUpdateSerializer, PatientSlotSerializer
 from doctors.serializers import DoctorProfileSerializer, SlotSerializer
 from doctors.models import DoctorProfile, Slot
 
@@ -68,7 +68,7 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
 
 
 class SlotsOfDoctorsAPIView(generics.ListAPIView):
-    serializer_class = SlotSerializer
+    serializer_class = PatientSlotSerializer
     permission_classes = [IsAuthenticated,IsPatient]
     authentication_classes = [JWTAuthentication]
 

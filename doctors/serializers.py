@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .validators import RequiredValidator
 from datetime import datetime
+from django.db.models import Q
 
 from .models import DoctorProfile, Account, Slot, Department, Qualification
 from booking.models import Booking
@@ -100,7 +101,12 @@ class SlotSerializer(serializers.ModelSerializer):
         start_datetime = start_datetime.replace(tzinfo=timezone.utc)
 
         # Check if there is no other slot in the same time and date
-        if Slot.objects.filter(start_time__lte=end_time, start_time__gte=start_time, date=date, doctor=doctor).exists():
+        if Slot.objects.filter(
+            Q(start_time__lt=end_time, end_time__gt=start_time) |  # overlaps partially or completely with existing slot
+            Q(start_time__lte=start_time, end_time__gte=end_time),  # completely overlaps with existing slot
+            date=date,
+            doctor=doctor
+        ).exists():
             raise serializers.ValidationError('There is already a slot in this time and date.')
         elif start_datetime <= timezone.now() + timedelta(hours=2):
             raise serializers.ValidationError('You can only add slots with start times that are at least two hours from now ')

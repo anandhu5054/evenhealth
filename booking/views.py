@@ -14,7 +14,7 @@ from django.utils import timezone
 import razorpay
 from django.conf import settings
 import requests
-
+from django.db.models import Q 
 from patients.permissions import IsPatient, IsApproved, IsVerified
 
 
@@ -44,6 +44,15 @@ class BookingCreateAPIView(generics.CreateAPIView):
             timezone.datetime.combine(slot.date, slot.start_time))
         if slot_start_datetime < timezone.now():
             raise ValidationError('You cannot book a slot that has already started')
+        
+        patient = self.request.user.patientprofile
+
+        existing_booking = Booking.objects.filter(
+            Q(slot=slot) | Q(slot__date=slot.date) 
+        ).exists()
+
+        if existing_booking:
+            raise ValidationError('You have already booked a slot for this doctor on this date.')
 
 
         # Create the booking object
@@ -107,11 +116,14 @@ class PaymentVerifyAPIView(APIView):
         booking.slot.booked_tokens +=1
         booking.slot.save()
         # Mark the booking as paid and send a confirmation to the user
+        booking.payment_id = 'payment_id'
         booking.paid = True
         booking.save()
 
 
         return Response({'status': 'success'})
+
+
 
 class ListBookedAppointmentAPI(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -120,4 +132,60 @@ class ListBookedAppointmentAPI(generics.ListAPIView):
 
     def get_queryset(self):
         patient = self.request.user.patientprofile
-        return Booking.objects.filter(patient=patient, paid=True)
+        from datetime import date
+        today = datetime.now().date()
+        queryset = Booking.objects.filter(patient=patient, paid=True)
+        
+        past = self.request.query_params.get('past')
+        future = self.request.query_params.get('future')
+        date_str = self.request.query_params.get('date')
+        cancel = self.request.query_params.get('cancel')
+        
+        if past:
+            queryset = queryset.filter(slot__date__lt=today)
+        elif future:
+            queryset = queryset.filter(slot__date__gte=today)
+        elif cancel:
+            queryset = Booking.objects.filter(patient=patient, order_id=None)
+        
+        if date_str:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            queryset = queryset.filter(slot__date=date)
+        
+        return queryset
+
+
+class CancelBookingAPIView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    serializer_class = BookingSerializer
+    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+    
+
+    def get_queryset(self):
+        booking_id = self.kwargs['pk']
+        return Booking.objects.filter(id=booking_id)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Check if the booking is already cancelled
+        if not instance.paid:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'Booking is already cancelled.'})
+
+
+        # Cancel the Razorpay payment
+        razorpay_client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        try:
+            refund_amount = instance.slot.doctor.consultation_fee * 100
+            refund = razorpay_client.payment.refund(instance.payment_id, {'amount': refund_amount})
+        except:
+            # TODO: handle the exception
+            pass
+                
+                # Update the booking object
+        instance.paid = False
+        instance.payment_id = None
+        instance.order_id = None
+        instance.save()
+
+        return Response({'status': 'success'})

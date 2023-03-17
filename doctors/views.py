@@ -14,7 +14,8 @@ from .permissions import IsDoctor, IsApproved
 from datetime import datetime
 from django.db import IntegrityError
 from booking.models import Booking
-
+from datetime import date
+from django.utils import timezone
 
 
 class CreateDoctorProfileview(generics.ListCreateAPIView):
@@ -87,23 +88,82 @@ class CreateQualificationView(generics.ListCreateAPIView):
         return Qualification.objects.filter(doctor=doctor)
 
 
+
+# class SlotListAPIView(generics.ListAPIView):
+#     """API for doctors to get the slots"""
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+#     serializer_class = SlotSerializer
+#     filter_backends = [filters.OrderingFilter, filters.DateFromToRangeFilter]
+#     ordering_fields = ['date', 'start_time']
+#     date_fields = ['date']
+
+#     def get_queryset(self):
+#         user = self.request.user
+#         doctor = DoctorProfile.objects.get(user=user)
+
+#         queryset = Slot.objects.filter(doctor=doctor)
+
+#         # Filter for past or future slots
+#         slot_filter = self.request.query_params.get('slot_filter', None)
+#         if slot_filter == 'past':
+#             queryset = queryset.filter(date__lt=timezone.now().date())
+#         elif slot_filter == 'future':
+#             queryset = queryset.filter(date__gte=timezone.now().date())
+
+#         # Filter for date range or specific date
+#         date_from = self.request.query_params.get('date_from', None)
+#         date_to = self.request.query_params.get('date_to', None)
+#         date = self.request.query_params.get('date', None)
+
+#         if date_from and date_to:
+#             queryset = queryset.filter(date__range=[date_from, date_to])
+#         elif date:
+#             queryset = queryset.filter(date=date)
+
+#         return queryset
+
+
 class SlotListCreateAPIView(generics.ListCreateAPIView):
     """API for doctors to get the slots and create new ones"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
     serializer_class = SlotSerializer
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
         doctor = DoctorProfile.objects.get(user=user)
-        # Getting date from url(query_params)
+
         date_str = self.request.query_params.get('date')
+        start_date_str = self.request.query_params.get('start_date')
+        end_date_str = self.request.query_params.get('end_date')
+        past_slots = self.request.query_params.get('past_slots')
+        future_slots = self.request.query_params.get('future_slots')
+
+        from datetime import date
+        today = date.today()
+
         if date_str:
             #Getting Slots of a particular date
             date = datetime.strptime(date_str, '%Y-%m-%d').date()
             return Slot.objects.filter(doctor=doctor, date=date)
-        else:
-            return Slot.objects.filter(doctor=doctor)
+        
+        if start_date_str and end_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            slots = Slot.objects.filter(doctor=doctor, date__range=(start_date, end_date), date__lt=date.today())
+            return slots
+
+        if past_slots:
+            queryset = Slot.objects.filter(doctor=doctor, date__lt=today)
+            return queryset
+        elif future_slots:
+            queryset = Slot.objects.filter(doctor=doctor, date__gte=today)
+            return queryset        
+
+        return Slot.objects.filter(doctor=doctor)
+    
 
     def perform_create(self, serializer):
         user = self.request.user
