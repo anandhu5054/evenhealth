@@ -1,4 +1,4 @@
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from .serializers import PatientProfileSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -6,7 +6,8 @@ from rest_framework.pagination import PageNumberPagination
 from datetime import datetime
 from django.utils import timezone
 from datetime import timedelta
-
+from django.db import IntegrityError
+from rest_framework.response import Response
 from .permissions import IsPatient
 from .models import PatientProfile
 from account.models import Account
@@ -32,6 +33,8 @@ class RetrieveUpdatePateintProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         user = self.request.user
         return PatientProfile.objects.get(user=user)
+    
+    
 
 class CustomPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
@@ -45,7 +48,7 @@ class DoctorListForPatientsAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated,IsPatient]
     pagination_class = CustomPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['user__email', 'department__name']
+    search_fields = ['user__email', 'department__slug']
     ordering_fields = ['user__full_name', 'department__name']
 
     def get_queryset(self):
@@ -53,7 +56,7 @@ class DoctorListForPatientsAPIView(generics.ListAPIView):
         department = self.request.query_params.get('department', None)
 
         if department:
-            queryset = queryset.filter(department__name=department)
+            queryset = queryset.filter(department__slug=department)
 
 
         queryset = queryset.order_by('user__first_name')

@@ -7,6 +7,12 @@ from rest_framework import serializers
 from .models import Account, LoginOtp
 
 
+
+class AccountDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ( 'first_name','last_name', 'phone_number')
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
     class Meta:

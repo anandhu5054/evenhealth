@@ -7,14 +7,14 @@ from django.db.models import Q
 
 from .models import DoctorProfile, Account, Slot, Department, Qualification
 from booking.models import Booking
-from account.serializers import UserRegistrationSerializer
+from account.serializers import UserRegistrationSerializer, AccountDetailSerializer
 
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['name']
+        fields = ['id', 'name']
 
  
 class QualificationSerializer(serializers.ModelSerializer):
@@ -24,7 +24,8 @@ class QualificationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         request = self.context.get("request")
-        doctor = request.user.doctorprofile
+        # breakpoint()
+        doctor = request.user.doctorProfile
         validated_data['doctor'] = doctor
         return super().create(validated_data)
     
@@ -41,42 +42,23 @@ class CreateDoctorProfileSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+
 class DoctorProfileSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(source='user.email', required=True)
-    first_name = serializers.CharField(source='user.first_name')
-    last_name = serializers.CharField(source='user.last_name')
-    phone_number = serializers.CharField(source='user.phone_number')
+    user = AccountDetailSerializer()
     class Meta:
         model = DoctorProfile
-        fields = ('email', 'first_name','last_name', 'phone_number', 'date_of_birth', 'gender', 'address', 'speciality', 'years_experience', 
-        'license_number', 'license_expiry_date', 'hospital_affiliations',
-        'profile_image', 'experience', 'awards', 'publications', 'languages', 
-        'license_certificate', 'certifications_certificate', 'department')
+        fields = ('user', 'date_of_birth', 'gender', 'address', 'years_experience', 
+        'license_number', 'profile_image', 
+        'license_certificate', 'department')
              
-        validators = [
-            RequiredValidator(
-                fields=(  'date_of_birth', 'gender', 'address', 'speciality', 'years_experience', 
-        'license_number', 'license_expiry_date', 'hospital_affiliations',
-        'profile_image', 'experience', 'awards', 'publications', 'languages', 
-        'license_certificate', 'certifications_certificate', 'department')
-            )
-        ]
 
     def update(self, instance, validated_data):
-        # Extract the doctorfirst_name field from the validated data
-        user_data = validated_data.pop('user')
-        # Update the instance with the remaining validated data
-        instance = super(DoctorProfileSerializer, self).update(instance, validated_data)
-        # Update the user's first name if doctorfirst_name is provided
-        if user_data:
-            instance.user.first_name = user_data.get('first_name')
-            instance.user.email = user_data.get('email')
-            instance.user.last_name = user_data.get('last_name')
-            instance.user.phone_number = user_data.get('phone_number')
-            instance.user.save()
-
-        return instance
-
+        nested_serializer = self.fields['user']
+        nested_instance = instance.user
+        nested_data = validated_data.pop('user')
+        nested_serializer.update(nested_instance,nested_data)
+        return super(DoctorProfileSerializer, self).update(instance, validated_data)
+    
 
 class SlotSerializer(serializers.ModelSerializer):
     class Meta:
@@ -110,6 +92,8 @@ class SlotSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('There is already a slot in this time and date.')
         elif start_datetime <= timezone.now() + timedelta(hours=2):
             raise serializers.ValidationError('You can only add slots with start times that are at least two hours from now ')
+        elif start_time>end_time:
+            raise serializers.ValidationError("Invalid Time format")
         return data
 
 

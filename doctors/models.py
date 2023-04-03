@@ -22,28 +22,20 @@ class Department(models.Model):
 
 class DoctorProfile(models.Model):
     user = models.OneToOneField(Account,related_name="doctorProfile", on_delete=models.CASCADE)
-    date_of_birth = models.DateField(blank=True, null=True)
+    date_of_birth = models.DateField()
     GENDER_CHOICES = [
         ('M', 'Male'),
         ('F', 'Female'),
         ('O', 'Other'),
     ]
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)  ##
-    address = models.CharField(max_length=255, blank=True, null=True)  ###
-    speciality = models.CharField(max_length=255, blank=True, null=True) ###
-    years_experience = models.PositiveIntegerField(blank=True, null=True)  ###
-    license_number = models.CharField(max_length=255, blank=True, null=True)  ###
-    license_expiry_date = models.DateField(blank=True, null=True)  
-    hospital_affiliations = models.CharField(max_length=255, blank=True, null=True)  
-    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)  ###
-    bio = models.TextField(blank=True, null=True)   ####
-    experience = models.TextField(blank=True, null=True)
-    awards = models.TextField(blank=True, null=True)  #####
-    publications = models.TextField(blank=True, null=True) 
-    languages = models.CharField(max_length=255, blank=True, null=True) 
-    license_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)  ###
-    certifications_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)    ##
-    department = models.ForeignKey(Department, related_name="doctor_profile" ,on_delete=models.CASCADE) ##
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)  ##
+    address = models.CharField(max_length=255)
+    years_experience = models.PositiveIntegerField()
+    license_number = models.CharField(max_length=255) 
+    profile_image = models.ImageField(upload_to='profile_images/')
+    bio = models.TextField(blank=True, null=True)
+    license_certificate = models.ImageField(upload_to='certificates/')  
+    department = models.ForeignKey(Department, related_name="doctor_profile" ,on_delete=models.CASCADE) 
     consultation_fee = models.IntegerField()
 
     def __str__(self):
@@ -52,12 +44,10 @@ class DoctorProfile(models.Model):
 
 class Qualification(models.Model):
     doctor = models.ForeignKey(DoctorProfile, related_name='qualifications', on_delete=models.CASCADE)
-    qualification = models.CharField(max_length=255, blank=True, null=True)
-    medical_school = models.CharField(max_length=255, blank=True, null=True)
+    medical_school = models.CharField(max_length=255)
     graduation_year = models.PositiveIntegerField()
-    study_field = models.CharField(max_length=255, blank=True, null=True)
-    medical_school_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
-    graduation_certificate = models.ImageField(upload_to='certificates/', blank=True, null=True)
+    study_field = models.CharField(max_length=255)
+    graduation_certificate = models.ImageField(upload_to='certificates/')
 
 
 class Slot(models.Model):

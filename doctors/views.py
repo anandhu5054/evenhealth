@@ -25,6 +25,7 @@ class CreateDoctorProfileview(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        
 
 class RetrieveUpdateDoctorProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = DoctorProfileSerializer
@@ -35,24 +36,6 @@ class RetrieveUpdateDoctorProfileView(generics.RetrieveUpdateAPIView):
         user = self.request.user
         return DoctorProfile.objects.get(user=user)
     
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        try:            
-            self.perform_update(serializer)
-        except IntegrityError as e:
-            error_msg = str(e)
-            if 'email' in error_msg:
-                error_data = {'email': ['An account with this email already exists.']}
-            elif 'phone_number' in error_msg:
-                error_data = {'phone_number': ['An account with this phone number already exists.']}
-            else:
-                error_data = {'detail': ['An error occurred while updating the profile.']}
-
-            return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        return Response(serializer.data)
 
 class CreateDepartmentView(generics.ListCreateAPIView):
     """Creating a new department and to list all departments"""
@@ -89,40 +72,6 @@ class CreateQualificationView(generics.ListCreateAPIView):
 
 
 
-# class SlotListAPIView(generics.ListAPIView):
-#     """API for doctors to get the slots"""
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
-#     serializer_class = SlotSerializer
-#     filter_backends = [filters.OrderingFilter, filters.DateFromToRangeFilter]
-#     ordering_fields = ['date', 'start_time']
-#     date_fields = ['date']
-
-#     def get_queryset(self):
-#         user = self.request.user
-#         doctor = DoctorProfile.objects.get(user=user)
-
-#         queryset = Slot.objects.filter(doctor=doctor)
-
-#         # Filter for past or future slots
-#         slot_filter = self.request.query_params.get('slot_filter', None)
-#         if slot_filter == 'past':
-#             queryset = queryset.filter(date__lt=timezone.now().date())
-#         elif slot_filter == 'future':
-#             queryset = queryset.filter(date__gte=timezone.now().date())
-
-#         # Filter for date range or specific date
-#         date_from = self.request.query_params.get('date_from', None)
-#         date_to = self.request.query_params.get('date_to', None)
-#         date = self.request.query_params.get('date', None)
-
-#         if date_from and date_to:
-#             queryset = queryset.filter(date__range=[date_from, date_to])
-#         elif date:
-#             queryset = queryset.filter(date=date)
-
-#         return queryset
-
 
 class SlotListCreateAPIView(generics.ListCreateAPIView):
     """API for doctors to get the slots and create new ones"""
@@ -152,7 +101,7 @@ class SlotListCreateAPIView(generics.ListCreateAPIView):
         if start_date_str and end_date_str:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            slots = Slot.objects.filter(doctor=doctor, date__range=(start_date, end_date), date__lt=date.today())
+            slots = Slot.objects.filter(doctor=doctor, date__range=(start_date, end_date))
             return slots
 
         if past_slots:
@@ -184,6 +133,7 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+        
 
 class BookedAppointmentsAPIView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
