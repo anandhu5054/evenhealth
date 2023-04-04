@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'doctors',
     'labs',
     'adminpanel',
-    'booking'
+    'booking',
+    'django_cron'
 ]
 
 MIDDLEWARE = [
@@ -197,3 +198,9 @@ CELERY_TASK_SERIALIZER = 'json'
 
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+
+
+CRON_CLASSES = [
+    "booking.cron.MyCronJob",
+    # ...
+]
