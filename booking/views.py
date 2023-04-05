@@ -173,7 +173,7 @@ class CancelBookingAPIView(generics.DestroyAPIView):
         instance = self.get_object()
         # breakpoint()
         # Check if the booking is already cancelled
-        if not instance.paid:
+        if  instance.canceled:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'Booking is already cancelled.'})
 
 
