@@ -136,7 +136,6 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
 
         booked_slots = Booking.objects.filter(slot=instance,canceled=False,paid=True,refund=False)
-        
         for booked_slot in booked_slots:
             razorpay_client = razorpay.Client(
             auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
@@ -147,11 +146,12 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
             except:
                 # TODO: handle the exception
                 pass
-            booked_slot.slot.number_of_patients +=1
-            booked_slot.slot.save()
             booked_slot.refund = True
             booked_slot.canceled = True
             booked_slot.save()
+
+        instance.canceled = True
+        instance.save()
 
         return Response({'status': 'success'})
 

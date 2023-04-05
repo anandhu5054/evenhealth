@@ -57,3 +57,4 @@ class Slot(models.Model):
     doctor = models.ForeignKey(DoctorProfile, on_delete=models.CASCADE)
     number_of_patients = models.IntegerField( blank=True, null=True)
     booked_tokens = models.IntegerField(default=1)  #Number of booked patients
+    canceled = models.BooleanField(default=False)

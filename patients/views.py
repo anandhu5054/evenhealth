@@ -92,4 +92,4 @@ class SlotsOfDoctorsAPIView(generics.ListAPIView):
             return Slot.objects.none()
 
         # get the slots for the given doctor and date
-        return Slot.objects.filter(doctor_id=doctor_id, date=date, number_of_patients__gt=0)
+        return Slot.objects.filter(doctor_id=doctor_id, date=date, number_of_patients__gt=0,canceled=False)
