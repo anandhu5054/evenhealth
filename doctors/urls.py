@@ -20,5 +20,5 @@ urlpatterns = [
     path('get_or_update-profile/', RetrieveUpdateDoctorProfileView.as_view(), name='get_or_update-profile'),
     path('slots/', SlotListCreateAPIView.as_view(), name='slot_list_create'),
     path('slots/<int:pk>/', SlotRetrieveUpdateDestroyAPIView.as_view(), name='slot_retrieve_update_destroy'),
-    path('bookings', BookedAppointmentsAPIView.as_view(), name='bookings')
+    path('bookings/', BookedAppointmentsAPIView.as_view(), name='bookings')
 ]

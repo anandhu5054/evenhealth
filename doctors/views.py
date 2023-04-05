@@ -16,6 +16,8 @@ from django.db import IntegrityError
 from booking.models import Booking
 from datetime import date
 from django.utils import timezone
+import razorpay
+from django.conf import settings
 
 
 class CreateDoctorProfileview(generics.ListCreateAPIView):
@@ -132,8 +134,26 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         return Slot.objects.filter(doctor=doctor)
 
     def perform_destroy(self, instance):
-        instance.delete()
+
+        booked_slots = Booking.objects.filter(slot=instance,canceled=False,paid=True,refund=False)
         
+        for booked_slot in booked_slots:
+            razorpay_client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+            try:
+                refund_amount = booked_slot.slot.doctor.consultation_fee * 100
+                refund = razorpay_client.payment.refund(instance.payment_id, {'amount': refund_amount})
+            except:
+                # TODO: handle the exception
+                pass
+            booked_slot.slot.number_of_patients +=1
+            booked_slot.slot.save()
+            booked_slot.refund = True
+            booked_slot.canceled = True
+            booked_slot.save()
+
+        return Response({'status': 'success'})
 
 class BookedAppointmentsAPIView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -144,4 +164,29 @@ class BookedAppointmentsAPIView(generics.ListAPIView):
         user = self.request.user
         doctor = DoctorProfile.objects.get(user=user)
         slot = Slot.objects.filter(doctor=doctor)
+
+        date_str = self.request.query_params.get('date')
+        start_date_str = self.request.query_params.get('start_date')
+        end_date_str = self.request.query_params.get('end_date')
+        past_slots = self.request.query_params.get('past_slots')
+        future_slots = self.request.query_params.get('future_slots')
+
+        from datetime import date
+        today = date.today()
+
+        if date_str:
+            #Getting Slots of a particular date
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            slot = Slot.objects.filter(doctor=doctor, date=date)
+        
+        if start_date_str and end_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            slot = Slot.objects.filter(doctor=doctor, date__range=(start_date, end_date))
+        if past_slots:
+            slot = Slot.objects.filter(doctor=doctor, date__lt=today)
+        elif future_slots:
+            slot = Slot.objects.filter(doctor=doctor, date__gte=today)
+           
+
         return Booking.objects.filter(slot__in=slot,paid=True)

@@ -37,7 +37,7 @@ class BookingCreateAPIView(generics.CreateAPIView):
         if slot.number_of_patients < slot.booked_tokens:
             raise ValidationError('The slot is already full')
 
-        token = slot.booked_tokens
+        
 
         # Check if the slot start time is in the past
         slot_start_datetime = timezone.make_aware(
@@ -48,52 +48,21 @@ class BookingCreateAPIView(generics.CreateAPIView):
         patient = self.request.user.patientprofile
 
         existing_booking = Booking.objects.filter(
-            Q(slot=slot) | Q(slot__date=slot.date), paid=True 
+            Q(slot=slot) | Q(slot__date=slot.date)
         ).exists()
 
         if existing_booking:
             raise ValidationError('You have already booked a slot for this doctor on this date.')
 
-
-        existing_slot = Booking.objects.filter(Q(slot=slot) | Q(slot__date=slot.date), paid=False, canceled=False)
-
-
-
-        # # Check if the slot is already blocked by the same patient
-        # existing_blocked_slot = BlockedSlot.objects.filter(slot=slot, patient=patient).first()
-        # if existing_blocked_slot and not existing_blocked_slot.is_expired():
-        #     # The slot is already blocked by the same patient. Use this slot for the booking.
-        #     blocked_token = slot.booked_tokens
-        #     breakpoint()
-        # else:
-        #     # Block the slot for 5 minutes
-        #     expires_at = timezone.now() + timezone.timedelta(minutes=5)
-        #     token = slot.booked_tokens
-        #     blocked_slot = BlockedSlot.objects.create(slot=slot, patient=patient, expires_at=expires_at,blocked_token=token)
-        #     slot.booked_tokens += 1
-        #     # slot.booked_tokens = token
-        #     slot.save()
-
-
-
-
-
-
-
-
-
-
-
-
-
+        token = slot.booked_tokens
 
 
         # Create the booking object
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         booking = serializer.save(patient=self.request.user.patientprofile, slot=slot, consultation_type=consultation_type,token=token)
-        # booking.slot.booked_tokens +=1
-        # booking.slot.save()
+
+       
 
         # Create a Razorpay order
         razorpay_client = razorpay.Client(
@@ -153,7 +122,8 @@ class PaymentVerifyAPIView(APIView):
         booking.payment_id = 'payment_id'
         booking.paid = True
         booking.save()
-        
+        booking.slot.booked_tokens +=1
+        booking.slot.save()
 
         return Response({'status': 'success'})
 
@@ -180,7 +150,7 @@ class ListBookedAppointmentAPI(generics.ListAPIView):
         elif future:
             queryset = queryset.filter(slot__date__gte=today)
         elif cancel:
-            queryset = Booking.objects.filter(patient=patient, order_id=None)
+            queryset = Booking.objects.filter(patient=patient, canceled= True)
         
         if date_str:
             date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -201,6 +171,7 @@ class CancelBookingAPIView(generics.DestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        # breakpoint()
         # Check if the booking is already cancelled
         if not instance.paid:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'Booking is already cancelled.'})
@@ -217,6 +188,8 @@ class CancelBookingAPIView(generics.DestroyAPIView):
             pass
                 
                 # Update the booking object
+        instance.slot.number_of_patients +=1
+        instance.slot.save()
         instance.refund = True
         instance.canceled = True
         instance.save()

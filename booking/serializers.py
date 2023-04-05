@@ -21,7 +21,7 @@ class ListBookingsPatient(serializers.ModelSerializer):
     department = serializers.CharField(source='slot.doctor.department.name')
     class Meta:
         model = Booking
-        fields = ['id','doctorName','department','start_time','end_time','date', 'consultation_type','token']
+        fields = ['id','doctorName','department','start_time','end_time','date', 'consultation_type','token','paid','canceled','refund']
 
 class CancelBookingSerializer(serializers.ModelSerializer):
     class Meta:

@@ -25,7 +25,7 @@ class Booking(models.Model):
         return self.slot.doctor.user.full_name()
     
     def is_expired(self):
-        expires_at = self.created_at + timezone.timedelta(minutes=5)
+        expires_at = self.created_at + timezone.timedelta(minutes=1)
         return timezone.now() >= expires_at
     
     doctor.short_description = 'Doctor'
