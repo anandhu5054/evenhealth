@@ -21,7 +21,7 @@ from patients.permissions import IsPatient, IsApproved, IsVerified
 class BookingCreateAPIView(generics.CreateAPIView):
     authentication_classes = [JWTAuthentication]
     serializer_class = BookingSerializer
-    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+    permission_classes = [IsAuthenticated, IsPatient]
 
     def create(self, request, *args, **kwargs):
         # Get the slot ID and consultation type from the request data
@@ -87,7 +87,7 @@ class BookingCreateAPIView(generics.CreateAPIView):
 
 class PaymentVerifyAPIView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+    permission_classes = [IsAuthenticated, IsPatient]
 
     def post(self, request, *args, **kwargs):
         # Get the booking ID and payment details from the request data
@@ -132,7 +132,7 @@ class PaymentVerifyAPIView(APIView):
 class ListBookedAppointmentAPI(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     serializer_class = ListBookingsPatient
-    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+    permission_classes = [IsAuthenticated, IsPatient]
 
     def get_queryset(self):
         patient = self.request.user.patientprofile
@@ -162,7 +162,7 @@ class ListBookedAppointmentAPI(generics.ListAPIView):
 class CancelBookingAPIView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     serializer_class = BookingSerializer
-    permission_classes = [IsAuthenticated, IsPatient, IsApproved, IsVerified]
+    permission_classes = [IsAuthenticated, IsPatient]
     
 
     def get_queryset(self):

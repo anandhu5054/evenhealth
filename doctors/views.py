@@ -78,7 +78,7 @@ class CreateQualificationView(generics.ListCreateAPIView):
 class SlotListCreateAPIView(generics.ListCreateAPIView):
     """API for doctors to get the slots and create new ones"""
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+    permission_classes = [IsAuthenticated, IsDoctor]
     serializer_class = SlotSerializer
     pagination_class = None
 
@@ -125,7 +125,7 @@ class SlotListCreateAPIView(generics.ListCreateAPIView):
 class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     """API for the doctors to get, put and delete the slots"""
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+    permission_classes = [IsAuthenticated, IsDoctor]
     serializer_class = SlotSerializer
 
     def get_queryset(self):
@@ -157,7 +157,7 @@ class SlotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 class BookedAppointmentsAPIView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsDoctor, IsApproved]
+    permission_classes = [IsAuthenticated, IsDoctor]
     serializer_class = BookedAppointmentsSerializer
     
     def get_queryset(self):
