@@ -23,7 +23,7 @@ class PatientProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = ('user', 'date_of_birth', 'gender',
-                  'address', 'blood_group',)
+                  'address', 'blood_group','profile_image')
 
     def update(self, instance, validated_data):
         nested_serializer = self.fields['user']
